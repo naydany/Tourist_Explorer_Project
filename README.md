@@ -16,23 +16,30 @@ flutter run
 
 ## Project layout
 
+Organised by layer rather than by feature: the app has a single domain
+(destinations), so a feature split would add nesting without separating
+anything.
+
 ```
 lib/
   main.dart                     entry point only
-  app/app.dart                  root widget: theme + routing
   core/
+    app.dart                    root widget: theme + routing
     constants/                  app-wide constants
     router/app_router.dart      named routes
     theme/app_theme.dart        light/dark ColorScheme + component themes
-  features/<feature>/
-    data/                       models, API clients, repositories
-    presentation/               screens and feature widgets
-  shared/widgets/               widgets reused across features
+  models/                       data classes + JSON parsing
+  datasources/                  where data comes from (bundled asset, API)
+  repositories/                 chooses a datasource, exposes queries
+  providers/                    state shared across screens
+  views/                        screens
+  widgets/                      widgets reused across screens
+assets/data/db.json             seed catalogue
 test/                           mirrors lib/ structure
 ```
 
-Add a screen by creating it under `lib/features/<feature>/presentation/`,
-then registering a route in `AppRoutes` + `AppRouter.routes`.
+Add a screen by creating it under `lib/views/`, then registering a route in
+`AppRoutes` + `AppRouter.routes`.
 
 ## Checks
 

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tourist_explorer_project/app/app.dart';
+import 'package:tourist_explorer_project/core/app.dart';
 
 void main() {
   testWidgets('app boots to the home screen', (tester) async {

@@ -3,7 +3,7 @@ import 'dart:convert';
 // import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../features/destinations/data/models/destination.dart';
+import '../models/destination.dart';
 
 class DestinationDatasource {
   static List<Destination>? _cache;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_constants.dart';
+import '../core/constants/app_constants.dart';
 
 /// Placeholder landing screen. Replace the body as features land.
 class HomeScreen extends StatelessWidget {

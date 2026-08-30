@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tourist_explorer_project/features/destinations/data/models/destination.dart';
+import 'package:tourist_explorer_project/models/destination.dart';
 
 /// Reads the seed file straight from disk rather than through `rootBundle`,
 /// so the test exercises the real catalogue without needing asset bundling.

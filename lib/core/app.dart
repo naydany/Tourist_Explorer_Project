@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants/app_constants.dart';
-import '../core/router/app_router.dart';
-import '../core/theme/app_theme.dart';
+import 'constants/app_constants.dart';
+import 'router/app_router.dart';
+import 'theme/app_theme.dart';
 
 /// Root widget: owns theming and routing only. Feature logic lives under
 /// `lib/features/`.

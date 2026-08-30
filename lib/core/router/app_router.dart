@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../features/home/presentation/home_screen.dart';
+import '../../views/home_screen.dart';
 
 /// Named route constants. Add one entry here per screen, then wire it in
 /// [AppRouter.routes].

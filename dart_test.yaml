@@ -1,0 +1,5 @@
+# Tags used by the suite. `live` marks tests that need the Tourist Explorer API
+# running on 127.0.0.1:8000; skip them in CI with `flutter test -x live`.
+tags:
+  live:
+    description: Hits the real REST API rather than a mock.

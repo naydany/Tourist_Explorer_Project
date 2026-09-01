@@ -17,7 +17,7 @@ class TouristExplorerApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.explore,
       routes: AppRouter.routes,
       onUnknownRoute: AppRouter.onUnknownRoute,
     );

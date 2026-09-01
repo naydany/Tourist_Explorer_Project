@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart' show listEquals;
 
 /// A single place worth visiting.
 ///
-/// Mirrors one entry in the `destinations` array of `assets/data/db.json`,
-/// which is the source of truth for this shape. This type is a passive value
-/// holder: loading lives in the data source, querying in the repository.
+/// Mirrors the `Destination` schema of the Tourist Explorer REST API, whose
+/// JSON is camelCase and maps onto these fields one for one. This type is a
+/// passive value holder: fetching lives in the data source, querying in the
+/// repository.
 class Destination {
   const Destination({
     required this.id,

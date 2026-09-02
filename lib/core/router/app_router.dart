@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../repositories/destination_repository.dart';
+import '../../repositories/favorites_store.dart';
 import '../../views/destination/destination_detail_screen.dart';
 import '../../views/main_screen.dart';
 
@@ -14,15 +15,22 @@ abstract final class AppRoutes {
 }
 
 abstract final class AppRouter {
-  static Map<String, WidgetBuilder> routes(DestinationRepository destinations) {
+  static Map<String, WidgetBuilder> routes(
+    DestinationRepository destinations,
+    FavoritesStore favorites,
+  ) {
     return <String, WidgetBuilder>{
-      AppRoutes.explore: (_) => MainScreen(destinations: destinations),
+      AppRoutes.explore: (_) =>
+          MainScreen(destinations: destinations, favorites: favorites),
     };
   }
 
   /// Routes that need an argument, which a plain [WidgetBuilder] map cannot
   /// receive. Returning null lets [onUnknownRoute] handle the rest.
-  static RouteFactory onGenerateRoute(DestinationRepository destinations) {
+  static RouteFactory onGenerateRoute(
+    DestinationRepository destinations,
+    FavoritesStore favorites,
+  ) {
     return (RouteSettings settings) {
       if (settings.name != AppRoutes.destination) return null;
 
@@ -34,6 +42,7 @@ abstract final class AppRouter {
         builder: (_) => DestinationDetailScreen(
           destinationId: id,
           repository: destinations,
+          favorites: favorites,
         ),
       );
     };

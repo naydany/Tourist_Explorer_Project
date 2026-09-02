@@ -7,6 +7,7 @@ import 'package:tourist_explorer_project/datasources/destination_datasource.dart
 import 'package:tourist_explorer_project/models/destination.dart';
 import 'package:tourist_explorer_project/models/page.dart';
 import 'package:tourist_explorer_project/repositories/destination_repository.dart';
+import 'package:tourist_explorer_project/repositories/favorites_store.dart';
 
 void main() {
   testWidgets('app boots to the explore screen', (tester) async {
@@ -45,6 +46,7 @@ void main() {
 Widget _app(DestinationDatasource datasource) {
   return TouristExplorerApp(
     destinations: DestinationRepository(datasource: datasource),
+    favorites: FavoritesStore(),
   );
 }
 

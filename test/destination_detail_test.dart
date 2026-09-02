@@ -7,6 +7,7 @@ import 'package:tourist_explorer_project/datasources/destination_datasource.dart
 import 'package:tourist_explorer_project/models/destination.dart';
 import 'package:tourist_explorer_project/models/page.dart';
 import 'package:tourist_explorer_project/repositories/destination_repository.dart';
+import 'package:tourist_explorer_project/repositories/favorites_store.dart';
 import 'package:tourist_explorer_project/views/destination/destination_detail_screen.dart';
 
 void main() {
@@ -14,6 +15,7 @@ void main() {
     await tester.pumpWidget(
       TouristExplorerApp(
         destinations: DestinationRepository(datasource: _FakeDatasource()),
+        favorites: FavoritesStore(),
       ),
     );
     await tester.pump();
@@ -47,6 +49,7 @@ void main() {
           destinationId: 12,
           // Nothing cached: the screen must call fetchById itself.
           repository: DestinationRepository(datasource: datasource),
+          favorites: FavoritesStore(),
         ),
       ),
     );
@@ -65,6 +68,7 @@ void main() {
         home: DestinationDetailScreen(
           destinationId: 12,
           repository: DestinationRepository(datasource: _FakeDatasource()),
+          favorites: FavoritesStore(),
         ),
       ),
     );
@@ -81,6 +85,7 @@ void main() {
         home: DestinationDetailScreen(
           destinationId: 12,
           repository: DestinationRepository(datasource: _FailingDatasource()),
+          favorites: FavoritesStore(),
         ),
       ),
     );

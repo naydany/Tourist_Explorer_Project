@@ -5,16 +5,19 @@ import '../../core/network/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
 import '../../repositories/destination_repository.dart';
+import '../../repositories/favorites_store.dart';
 
 class DestinationDetailScreen extends StatefulWidget {
   const DestinationDetailScreen({
     required this.destinationId,
     required this.repository,
+    required this.favorites,
     super.key,
   });
 
   final int destinationId;
   final DestinationRepository repository;
+  final FavoritesStore favorites;
 
   @override
   State<DestinationDetailScreen> createState() =>
@@ -24,7 +27,6 @@ class DestinationDetailScreen extends StatefulWidget {
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   Destination? _destination;
   ApiException? _error;
-  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -70,25 +72,33 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverToBoxAdapter(
-            child: _Header(
-              destination: destination,
-              isFavorite: _isFavorite,
-              onFavoriteToggle: () =>
-                  setState(() => _isFavorite = !_isFavorite),
-            ),
+    // The heart is shared with the list and the Saved tab, so this rebuilds
+    // whenever it changes anywhere.
+    return ListenableBuilder(
+      listenable: widget.favorites,
+      builder: (context, _) {
+        final isFavorite = widget.favorites.contains(destination.id);
+
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: _Header(
+                  destination: destination,
+                  isFavorite: isFavorite,
+                  onFavoriteToggle: () => widget.favorites.toggle(destination),
+                ),
+              ),
+              SliverToBoxAdapter(child: _Body(destination: destination)),
+            ],
           ),
-          SliverToBoxAdapter(child: _Body(destination: destination)),
-        ],
-      ),
-      bottomNavigationBar: _ActionBar(
-        isFavorite: _isFavorite,
-        onFavoriteToggle: () => setState(() => _isFavorite = !_isFavorite),
-        onDirections: () => _copyCoordinates(destination),
-      ),
+          bottomNavigationBar: _ActionBar(
+            isFavorite: isFavorite,
+            onFavoriteToggle: () => widget.favorites.toggle(destination),
+            onDirections: () => _copyCoordinates(destination),
+          ),
+        );
+      },
     );
   }
 }

@@ -6,14 +6,20 @@ import '../../core/router/app_router.dart';
 import '../../models/destination.dart';
 import '../../models/page.dart';
 import '../../repositories/destination_repository.dart';
+import '../../repositories/favorites_store.dart';
 import 'widgets/destination_card.dart';
 import 'widgets/destination_row.dart';
 import 'widgets/filter_sheet.dart';
 
 class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({required this.repository, super.key});
+  const ExploreScreen({
+    required this.repository,
+    required this.favorites,
+    super.key,
+  });
 
   final DestinationRepository repository;
+  final FavoritesStore favorites;
 
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
@@ -24,8 +30,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  final Set<int> _favorites = <int>{};
 
   Timer? _debounceTimer;
 
@@ -218,46 +222,53 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => _load(forceRefresh: true),
-          child: CustomScrollView(
-            controller: _scrollController,
-            // Always scrollable so pull-to-refresh works on the error and
-            // empty states too.
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: <Widget>[
-              const SliverToBoxAdapter(child: _Greeting()),
-              SliverToBoxAdapter(
-                child: _SearchField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  onClear: _clearSearch,
-                  onFilter: _openFilters,
-                  hasFilters: _hasFilters,
+        // Rebuilds when a heart is toggled here or on another screen.
+        child: ListenableBuilder(
+          listenable: widget.favorites,
+          builder: (context, _) => RefreshIndicator(
+            onRefresh: () => _load(forceRefresh: true),
+            child: CustomScrollView(
+              controller: _scrollController,
+              // Always scrollable so pull-to-refresh works on the error and
+              // empty states too.
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: <Widget>[
+                const SliverToBoxAdapter(child: _Greeting()),
+                SliverToBoxAdapter(
+                  child: _SearchField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    onClear: _clearSearch,
+                    onFilter: _openFilters,
+                    hasFilters: _hasFilters,
+                  ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: _isFiltering
-                    ? _AppliedFilters(
-                        query: _query,
-                        onRemoveSort: _resetSort,
-                        onRemoveCategory: _removeCategory,
-                        onRemoveMinRating: _removeMinRating,
-                        onClearAll: _clearAll,
-                      )
-                    : _CategoryChips(
-                        selected: _query.category,
-                        onSelected: _onCategorySelected,
-                      ),
-              ),
-              SliverToBoxAdapter(
-                child: _isFiltering
-                    ? _ResultSummary(query: _query, total: _page?.total)
-                    : _SectionHeader(title: _sectionTitle, count: _page?.total),
-              ),
-              ..._buildBody(),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
+                SliverToBoxAdapter(
+                  child: _isFiltering
+                      ? _AppliedFilters(
+                          query: _query,
+                          onRemoveSort: _resetSort,
+                          onRemoveCategory: _removeCategory,
+                          onRemoveMinRating: _removeMinRating,
+                          onClearAll: _clearAll,
+                        )
+                      : _CategoryChips(
+                          selected: _query.category,
+                          onSelected: _onCategorySelected,
+                        ),
+                ),
+                SliverToBoxAdapter(
+                  child: _isFiltering
+                      ? _ResultSummary(query: _query, total: _page?.total)
+                      : _SectionHeader(
+                          title: _sectionTitle,
+                          count: _page?.total,
+                        ),
+                ),
+                ..._buildBody(),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
           ),
         ),
       ),
@@ -329,9 +340,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: DestinationCard(
                 destination: destination,
-                isFavorite: _favorites.contains(destination.id),
+                isFavorite: widget.favorites.contains(destination.id),
                 onTap: () => _openDetail(destination),
-                onFavoriteToggle: () => _toggleFavorite(destination.id),
+                onFavoriteToggle: () => widget.favorites.toggle(destination),
               ),
             );
           },
@@ -344,12 +355,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ),
     ];
-  }
-
-  void _toggleFavorite(int id) {
-    setState(() {
-      if (!_favorites.remove(id)) _favorites.add(id);
-    });
   }
 
   void _openDetail(Destination destination) {

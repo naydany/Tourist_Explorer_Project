@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../repositories/destination_repository.dart';
+import '../repositories/favorites_store.dart';
 import 'explore/explore_screen.dart';
+import 'saved/saved_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({required this.destinations, super.key});
+  const MainScreen({
+    required this.destinations,
+    required this.favorites,
+    super.key,
+  });
 
   final DestinationRepository destinations;
+  final FavoritesStore favorites;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -16,9 +23,12 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   late final List<Widget> _tabs = <Widget>[
-    ExploreScreen(repository: widget.destinations),
+    ExploreScreen(repository: widget.destinations, favorites: widget.favorites),
     const Center(child: Text('Map Screen')),
-    const Center(child: Text('Favorite Screen')),
+    SavedScreen(
+      favorites: widget.favorites,
+      onBrowse: () => setState(() => _currentIndex = 0),
+    ),
     const Center(child: Text('Setting Screen')),
   ];
 

@@ -7,6 +7,8 @@ import '../../models/destination.dart';
 import '../../models/page.dart';
 import '../../repositories/destination_repository.dart';
 import 'widgets/destination_card.dart';
+import 'widgets/destination_row.dart';
+import 'widgets/filter_sheet.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({required this.repository, super.key});
@@ -111,14 +113,89 @@ class _ExploreScreenState extends State<ExploreScreen> {
         DestinationQuery(
           text: trimmed.isEmpty ? null : trimmed,
           category: _query.category,
+          minRating: _query.minRating,
+          sort: _query.sort,
         ),
       );
     });
   }
 
+  /// True once the user has narrowed the list. The screen then swaps browse
+  /// cards for scannable result rows.
+  bool get _isFiltering =>
+      _query.text != null ||
+      _query.category != null ||
+      _query.minRating != null ||
+      _query.sort != DestinationQuery.mostPopular;
+
+  bool get _hasFilters =>
+      _query.category != null ||
+      _query.minRating != null ||
+      _query.sort != DestinationQuery.mostPopular;
+
+  Future<void> _openFilters() async {
+    final updated = await showFilterSheet(context, _query);
+    if (updated != null) _applyQuery(updated);
+  }
+
   void _onCategorySelected(String? category) {
     if (category == _query.category) return;
-    _applyQuery(DestinationQuery(text: _query.text, category: category));
+    _applyQuery(
+      DestinationQuery(
+        text: _query.text,
+        category: category,
+        minRating: _query.minRating,
+        sort: _query.sort,
+      ),
+    );
+  }
+
+  void _clearSearch() {
+    _debounceTimer?.cancel();
+    _searchController.clear();
+    _applyQuery(
+      DestinationQuery(
+        category: _query.category,
+        minRating: _query.minRating,
+        sort: _query.sort,
+      ),
+    );
+  }
+
+  void _clearAll() {
+    _debounceTimer?.cancel();
+    _searchController.clear();
+    _applyQuery(const DestinationQuery());
+  }
+
+  void _removeCategory() {
+    _applyQuery(
+      DestinationQuery(
+        text: _query.text,
+        minRating: _query.minRating,
+        sort: _query.sort,
+      ),
+    );
+  }
+
+  void _removeMinRating() {
+    _applyQuery(
+      DestinationQuery(
+        text: _query.text,
+        category: _query.category,
+        sort: _query.sort,
+      ),
+    );
+  }
+
+  void _resetSort() {
+    _applyQuery(
+      DestinationQuery(
+        text: _query.text,
+        category: _query.category,
+        minRating: _query.minRating,
+      ),
+    );
   }
 
   void _applyQuery(DestinationQuery query) {
@@ -154,19 +231,29 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: _SearchField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
+                  onClear: _clearSearch,
+                  onFilter: _openFilters,
+                  hasFilters: _hasFilters,
                 ),
               ),
               SliverToBoxAdapter(
-                child: _CategoryChips(
-                  selected: _query.category,
-                  onSelected: _onCategorySelected,
-                ),
+                child: _isFiltering
+                    ? _AppliedFilters(
+                        query: _query,
+                        onRemoveSort: _resetSort,
+                        onRemoveCategory: _removeCategory,
+                        onRemoveMinRating: _removeMinRating,
+                        onClearAll: _clearAll,
+                      )
+                    : _CategoryChips(
+                        selected: _query.category,
+                        onSelected: _onCategorySelected,
+                      ),
               ),
               SliverToBoxAdapter(
-                child: _SectionHeader(
-                  title: _sectionTitle,
-                  count: _page?.total,
-                ),
+                child: _isFiltering
+                    ? _ResultSummary(query: _query, total: _page?.total)
+                    : _SectionHeader(title: _sectionTitle, count: _page?.total),
               ),
               ..._buildBody(),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -178,7 +265,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   String get _sectionTitle {
-    if (_query.text != null) return 'Search results';
     if (_query.category != null) return _query.category!;
     return 'Popular this week';
   }
@@ -220,25 +306,40 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
 
     return <Widget>[
-      SliverList.builder(
-        itemCount: page.items.length,
-        itemBuilder: (context, index) {
-          final destination = page.items[index];
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: DestinationCard(
+      // Browsing sells one place at a time; results are for scanning many.
+      if (_isFiltering)
+        SliverList.separated(
+          itemCount: page.items.length,
+          separatorBuilder: (context, index) =>
+              const Divider(height: 1, indent: 20, endIndent: 20),
+          itemBuilder: (context, index) {
+            final destination = page.items[index];
+            return DestinationRow(
               destination: destination,
-              isFavorite: _favorites.contains(destination.id),
               onTap: () => _openDetail(destination),
-              onFavoriteToggle: () => _toggleFavorite(destination.id),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        )
+      else
+        SliverList.builder(
+          itemCount: page.items.length,
+          itemBuilder: (context, index) {
+            final destination = page.items[index];
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: DestinationCard(
+                destination: destination,
+                isFavorite: _favorites.contains(destination.id),
+                onTap: () => _openDetail(destination),
+                onFavoriteToggle: () => _toggleFavorite(destination.id),
+              ),
+            );
+          },
+        ),
       if (_isLoadingMore)
         const SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(bottom: 24),
+            padding: EdgeInsets.only(top: 16, bottom: 24),
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
         ),
@@ -303,23 +404,82 @@ class _Greeting extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.onChanged});
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+    required this.onFilter,
+    required this.hasFilters,
+  });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final VoidCallback onFilter;
+
+  /// Tints the filter button, so an active filter is visible without opening
+  /// the sheet.
+  final bool hasFilters;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        decoration: const InputDecoration(
-          hintText: 'Search places, towns, temples',
-          prefixIcon: Icon(Icons.search, size: 20),
-        ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            // Rebuilds as the text changes so the clear button can come and go
+            // without the whole screen rebuilding.
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, child) {
+                return TextField(
+                  controller: controller,
+                  onChanged: onChanged,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Search places, towns, temples',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: value.text.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: onClear,
+                            tooltip: 'Clear search',
+                            iconSize: 18,
+                            icon: const Icon(Icons.close),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Material(
+            color: hasFilters
+                ? theme.colorScheme.primary
+                : theme.colorScheme.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(26),
+            ),
+            child: InkWell(
+              onTap: onFilter,
+              borderRadius: BorderRadius.circular(26),
+              child: SizedBox(
+                width: 50,
+                height: 50,
+                child: Icon(
+                  Icons.tune,
+                  size: 20,
+                  color: hasFilters
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,21 +487,6 @@ class _SearchField extends StatelessWidget {
 
 class _CategoryChips extends StatelessWidget {
   const _CategoryChips({required this.selected, required this.onSelected});
-
-  static const List<(String label, String? value)> _categories =
-      <(String, String?)>[
-        ('All', null),
-        ('Beaches', 'Beach'),
-        ('Temples', 'Temple'),
-        ('Nature', 'Nature'),
-        ('Islands', 'Island'),
-        ('Waterfalls', 'Waterfall'),
-        ('Museums', 'Museum'),
-        ('Historical', 'Historical'),
-        ('Markets', 'Market'),
-        ('Wildlife', 'Wildlife'),
-        ('Cities', 'City'),
-      ];
 
   final String? selected;
   final ValueChanged<String?> onSelected;
@@ -355,10 +500,10 @@ class _CategoryChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
+        itemCount: kDestinationCategories.length,
         separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final (label, value) = _categories[index];
+          final (label, value) = kDestinationCategories[index];
           final isSelected = value == selected;
 
           return ChoiceChip(
@@ -381,6 +526,152 @@ class _CategoryChips extends StatelessWidget {
             shape: const StadiumBorder(),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The filters currently in force, each removable, plus a clear-all.
+class _AppliedFilters extends StatelessWidget {
+  const _AppliedFilters({
+    required this.query,
+    required this.onRemoveSort,
+    required this.onRemoveCategory,
+    required this.onRemoveMinRating,
+    required this.onClearAll,
+  });
+
+  final DestinationQuery query;
+  final VoidCallback onRemoveSort;
+  final VoidCallback onRemoveCategory;
+  final VoidCallback onRemoveMinRating;
+  final VoidCallback onClearAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final chips = <Widget>[
+      if (query.sort != DestinationQuery.mostPopular)
+        _FilterChip(
+          label: sortLabel(query.sort),
+          icon: Icons.arrow_downward_rounded,
+          highlighted: true,
+          onRemove: onRemoveSort,
+        ),
+      if (query.category != null)
+        _FilterChip(
+          label: categoryLabel(query.category!),
+          onRemove: onRemoveCategory,
+        ),
+      if (query.minRating != null)
+        _FilterChip(
+          label: '${query.minRating}+ rating',
+          onRemove: onRemoveMinRating,
+        ),
+    ];
+
+    // A text-only search has nothing to strip off; keep the spacing steady.
+    if (chips.isEmpty) return const SizedBox(height: 4);
+
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: <Widget>[
+          for (final chip in chips) ...<Widget>[chip, const SizedBox(width: 8)],
+          TextButton(
+            onPressed: onClearAll,
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurfaceVariant,
+            ),
+            child: const Text('Clear all'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.onRemove,
+    this.icon,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final VoidCallback onRemove;
+  final IconData? icon;
+
+  /// The sort chip is filled, as in the design; the rest are outlined.
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = highlighted
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurface;
+
+    return Material(
+      color: highlighted
+          ? theme.colorScheme.primary
+          : theme.colorScheme.surfaceContainerLowest,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: highlighted
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: InkWell(
+        onTap: onRemove,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(color: foreground),
+              ),
+              if (icon != null) ...<Widget>[
+                const SizedBox(width: 4),
+                Icon(icon, size: 14, color: foreground),
+              ],
+              const SizedBox(width: 6),
+              Icon(Icons.close, size: 14, color: foreground),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "12 PLACES · SORTED BY TOP RATED" - what this query actually returned.
+class _ResultSummary extends StatelessWidget {
+  const _ResultSummary({required this.query, this.total});
+
+  final DestinationQuery query;
+  final int? total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final count = total == null
+        ? 'SEARCHING'
+        : '$total ${total == 1 ? 'PLACE' : 'PLACES'}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+      child: Text(
+        '$count · SORTED BY ${sortLabel(query.sort).toUpperCase()}',
+        style: theme.textTheme.labelSmall,
       ),
     );
   }
@@ -481,7 +772,7 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             text == null
-                ? 'No destinations match this filter.'
+                ? 'No destinations match these filters.'
                 : 'No destinations match "$text".',
             style: theme.textTheme.bodyMedium,
             textAlign: TextAlign.center,

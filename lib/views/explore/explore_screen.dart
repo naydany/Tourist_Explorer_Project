@@ -1,11 +1,12 @@
 import 'dart:async' show Timer, unawaited;
 import 'package:flutter/material.dart' hide Page;
 
-import '../../../core/network/api_exception.dart';
-import '../../../models/destination.dart';
-import '../../../models/page.dart';
-import '../../../repositories/destination_repository.dart';
-import '../widgets/destination_card.dart';
+import '../../core/network/api_exception.dart';
+import '../../core/router/app_router.dart';
+import '../../models/destination.dart';
+import '../../models/page.dart';
+import '../../repositories/destination_repository.dart';
+import 'widgets/destination_card.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({required this.repository, super.key});
@@ -251,11 +252,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   void _openDetail(Destination destination) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${destination.name} - detail screen coming soon'),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.destination, arguments: destination.id);
   }
 }
 

@@ -20,6 +20,7 @@ class TouristExplorerApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       initialRoute: AppRoutes.explore,
       routes: AppRouter.routes(destinations),
+      onGenerateRoute: AppRouter.onGenerateRoute(destinations),
       onUnknownRoute: AppRouter.onUnknownRoute,
     );
   }

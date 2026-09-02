@@ -1,0 +1,863 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+
+import '../../core/network/api_exception.dart';
+import '../../core/theme/app_theme.dart';
+import '../../models/destination.dart';
+import '../../repositories/destination_repository.dart';
+
+class DestinationDetailScreen extends StatefulWidget {
+  const DestinationDetailScreen({
+    required this.destinationId,
+    required this.repository,
+    super.key,
+  });
+
+  final int destinationId;
+  final DestinationRepository repository;
+
+  @override
+  State<DestinationDetailScreen> createState() =>
+      _DestinationDetailScreenState();
+}
+
+class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
+  Destination? _destination;
+  ApiException? _error;
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _destination = widget.repository.peek(widget.destinationId);
+    if (_destination == null) _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _error = null);
+    try {
+      final destination = await widget.repository.getById(widget.destinationId);
+      if (!mounted) return;
+      setState(() => _destination = destination);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error);
+    }
+  }
+
+  Future<void> _copyCoordinates(Destination destination) async {
+    final coordinates = '${destination.latitude}, ${destination.longitude}';
+    await Clipboard.setData(ClipboardData(text: coordinates));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Coordinates copied: $coordinates')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final destination = _destination;
+    final error = _error;
+
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: _DetailError(error: error, onRetry: _load),
+      );
+    }
+
+    if (destination == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverToBoxAdapter(
+            child: _Header(
+              destination: destination,
+              isFavorite: _isFavorite,
+              onFavoriteToggle: () =>
+                  setState(() => _isFavorite = !_isFavorite),
+            ),
+          ),
+          SliverToBoxAdapter(child: _Body(destination: destination)),
+        ],
+      ),
+      bottomNavigationBar: _ActionBar(
+        isFavorite: _isFavorite,
+        onFavoriteToggle: () => setState(() => _isFavorite = !_isFavorite),
+        onDirections: () => _copyCoordinates(destination),
+      ),
+    );
+  }
+}
+
+/// Keeps a column of text readable on a desktop window, where a full-width
+/// paragraph would otherwise run to 120+ characters a line. A no-op on phones.
+class _ReadableWidth extends StatelessWidget {
+  const _ReadableWidth({required this.child});
+
+  static const double maxWidth = 560;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // heightFactor: 1 makes this size to the child. Without it the Align grows
+    // to fill the sliver's unbounded height and pushes the content out of the
+    // viewport.
+    return Center(
+      heightFactor: 1,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Hero image with the back and favourite buttons, the name and the address.
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.destination,
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+  });
+
+  final Destination destination;
+  final bool isFavorite;
+  final VoidCallback onFavoriteToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return SizedBox(
+      height: 360,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Image.network(
+            destination.imageUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return ColoredBox(color: colors.surfaceContainerHighest);
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return ColoredBox(color: colors.surfaceContainerHighest);
+            },
+          ),
+          // Darkens both ends so the round buttons at the top and the name at
+          // the foot stay legible over any photo.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[
+                  Color(0x73000000),
+                  Color(0x00000000),
+                  Color(0x00000000),
+                  Color(0xA6000000),
+                ],
+                stops: <double>[0, 0.32, 0.52, 1],
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      _RoundButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        tooltip: 'Back',
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const Spacer(),
+                      _RoundButton(
+                        icon: isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: isFavorite ? colors.error : null,
+                        tooltip: isFavorite ? 'Remove from saved' : 'Save',
+                        onPressed: onFavoriteToggle,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Name and place read as one block at the foot of the photo, clear of
+          // the sheet that overlaps it.
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 56,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  destination.name,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    shadows: const <Shadow>[
+                      Shadow(blurRadius: 14, color: Color(0xB3000000)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.place_outlined,
+                        size: 15,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        destination.address,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white70,
+                          shadows: const <Shadow>[
+                            Shadow(blurRadius: 10, color: Color(0xAA000000)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The cream sheet: facts panel, then the write-up.
+class _Body extends StatelessWidget {
+  const _Body({required this.destination});
+
+  final Destination destination;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Transform.translate(
+      offset: const Offset(0, -36),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          // Lifts the sheet off the photo so the seam reads as an edge rather
+          // than the image simply stopping.
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 18,
+              offset: Offset(0, -6),
+            ),
+          ],
+        ),
+        // The bottom padding replaces the height lost to the translate above
+        // and keeps the last row clear of the action bar.
+        padding: const EdgeInsets.fromLTRB(20, 28, 20, 44),
+        child: _ReadableWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _FactsPanel(destination: destination),
+              const SizedBox(height: 26),
+              Row(
+                children: <Widget>[
+                  Text('ABOUT', style: theme.textTheme.labelSmall),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Divider(height: 1)),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                destination.longDescription,
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
+              ),
+              const SizedBox(height: 24),
+              _Gallery(images: destination.gallery),
+              _TagWrap(tags: destination.tags),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dark green ticket: entry fee and open status above the fold, then hours,
+/// best time and rating below a perforated line.
+class _FactsPanel extends StatelessWidget {
+  const _FactsPanel({required this.destination});
+
+  final Destination destination;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final status = _readOpeningStatus(destination.openingHours);
+    final (price, unit) = _splitFee(destination.entryFee);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppTheme.forest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'ENTRY FEE',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: <Widget>[
+                          Flexible(
+                            child: Text(
+                              price,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                // An amount gets display size; a sentence such
+                                // as "Included in Angkor Pass" would shout at
+                                // 26, so it steps down instead.
+                                fontSize: price.length > 12 ? 19 : 26,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (unit != null) ...<Widget>[
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                unit,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (status != _OpeningStatus.unknown) ...<Widget>[
+                  const SizedBox(width: 12),
+                  _StatusPill(isOpen: status == _OpeningStatus.open),
+                ],
+              ],
+            ),
+          ),
+          const _Perforation(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _Fact(label: 'HOURS', value: destination.openingHours),
+                _Fact(label: 'BEST TIME', value: destination.bestTimeToVisit),
+                _Fact(
+                  label: 'RATING',
+                  value: '${destination.rating} ★',
+                  detail: '${_thousands(destination.reviewCount)} reviews',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The dashed line and the two notches that make the panel read as a ticket.
+class _Perforation extends StatelessWidget {
+  const _Perforation();
+
+  @override
+  Widget build(BuildContext context) {
+    final notch = Theme.of(context).colorScheme.surface;
+
+    return SizedBox(
+      height: 20,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: _DashedLine(),
+          ),
+          Positioned(left: -10, child: _Notch(color: notch)),
+          Positioned(right: -10, child: _Notch(color: notch)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Notch extends StatelessWidget {
+  const _Notch({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _DashedLine extends StatelessWidget {
+  const _DashedLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const dashWidth = 5.0;
+        const gapWidth = 5.0;
+        final count = (constraints.maxWidth / (dashWidth + gapWidth)).floor();
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List<Widget>.generate(
+            count,
+            (_) => const SizedBox(
+              width: dashWidth,
+              height: 1,
+              child: ColoredBox(color: Colors.white24),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.isOpen});
+
+  final bool isOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = isOpen ? AppTheme.star : Colors.white38;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              isOpen ? 'Open now' : 'Closed now',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: isOpen ? AppTheme.star : Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Fact extends StatelessWidget {
+  const _Fact({required this.label, required this.value, this.detail});
+
+  final String label;
+  final String value;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            if (detail != null) ...<Widget>[
+              const SizedBox(height: 2),
+              Text(
+                detail!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Horizontal strip of the extra images from `gallery`, hidden when the
+/// destination only has its cover photo.
+class _Gallery extends StatelessWidget {
+  const _Gallery({required this.images});
+
+  final List<String> images;
+
+  @override
+  Widget build(BuildContext context) {
+    if (images.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Text('GALLERY', style: theme.textTheme.labelSmall),
+            const SizedBox(width: 12),
+            const Expanded(child: Divider(height: 1)),
+          ],
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(
+                  images[index],
+                  width: 130,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return SizedBox(
+                      width: 130,
+                      child: ColoredBox(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return SizedBox(
+                      width: 130,
+                      child: ColoredBox(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _TagWrap extends StatelessWidget {
+  const _TagWrap({required this.tags});
+
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tags.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        for (final tag in tags)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text(tag.toUpperCase(), style: theme.textTheme.labelSmall),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Pinned footer: save toggle plus the primary action.
+class _ActionBar extends StatelessWidget {
+  const _ActionBar({
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+    required this.onDirections,
+  });
+
+  final bool isFavorite;
+  final VoidCallback onFavoriteToggle;
+  final VoidCallback onDirections;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.outlineVariant)),
+      ),
+      child: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        child: _ReadableWidth(
+          child: Row(
+            children: <Widget>[
+              Material(
+                color: colors.surfaceContainerLowest,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(color: colors.outlineVariant),
+                ),
+                child: InkWell(
+                  onTap: onFavoriteToggle,
+                  borderRadius: BorderRadius.circular(18),
+                  child: SizedBox(
+                    width: 58,
+                    height: 56,
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: colors.error,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: onDirections,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.forest,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: const Text(
+                      'Get directions',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundButton extends StatelessWidget {
+  const _RoundButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.color,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.surfaceContainerLowest,
+      shape: const CircleBorder(),
+      child: IconButton(
+        onPressed: onPressed,
+        tooltip: tooltip,
+        iconSize: 20,
+        icon: Icon(icon, color: color ?? colors.onSurface),
+      ),
+    );
+  }
+}
+
+class _DetailError extends StatelessWidget {
+  const _DetailError({required this.error, required this.onRetry});
+
+  final ApiException error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final (IconData icon, String headline) = switch (error) {
+      NetworkException() => (Icons.wifi_off_rounded, 'No connection'),
+      ApiStatusException(isNotFound: true) => (
+        Icons.search_off_rounded,
+        'Destination not found',
+      ),
+      ApiStatusException() => (Icons.cloud_off_rounded, 'Server problem'),
+      ParseException() => (Icons.error_outline_rounded, 'Unexpected response'),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(icon, size: 40, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: 16),
+          Text(headline, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            error.message,
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          FilledButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+enum _OpeningStatus { open, closed, unknown }
+
+/// Reads the API's free-text `openingHours` well enough to show a badge.
+///
+/// The field is prose - `"05:00 - 18:00 daily"`, `"Open 24 hours"` - so this
+/// recognises the two common shapes and returns [_OpeningStatus.unknown] for
+/// anything else, in which case the badge is hidden rather than guessed at.
+_OpeningStatus _readOpeningStatus(String openingHours, {DateTime? now}) {
+  final text = openingHours.toLowerCase();
+  if (text.contains('24 hour') || text.contains('24/7')) {
+    return _OpeningStatus.open;
+  }
+
+  final match = RegExp(
+    r'(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})',
+  ).firstMatch(text);
+  if (match == null) return _OpeningStatus.unknown;
+
+  final moment = now ?? DateTime.now();
+  final minutesNow = moment.hour * 60 + moment.minute;
+  final opens = int.parse(match.group(1)!) * 60 + int.parse(match.group(2)!);
+  final closes = int.parse(match.group(3)!) * 60 + int.parse(match.group(4)!);
+
+  // Hours that wrap past midnight, e.g. "18:00 - 02:00".
+  final isOpen = closes >= opens
+      ? minutesNow >= opens && minutesNow < closes
+      : minutesNow >= opens || minutesNow < closes;
+
+  return isOpen ? _OpeningStatus.open : _OpeningStatus.closed;
+}
+
+/// Splits `"$3.00 / person"` into a large price and a small qualifier. Returns
+/// the whole string as the price when there is no amount to pick out.
+(String price, String? unit) _splitFee(String entryFee) {
+  final match = RegExp(
+    r'^\s*(\$?[\d.,]+|free)\s*(.*)$',
+    caseSensitive: false,
+  ).firstMatch(entryFee);
+  if (match == null) return (entryFee, null);
+
+  final remainder = match.group(2)?.trim();
+  return (
+    match.group(1)!,
+    remainder == null || remainder.isEmpty ? null : remainder,
+  );
+}
+
+/// `2431` -> `2,431`.
+String _thousands(int value) {
+  return value.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+$)'),
+    (match) => '${match.group(1)},',
+  );
+}

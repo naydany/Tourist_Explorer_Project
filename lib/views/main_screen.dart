@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../repositories/destination_repository.dart';
-import 'tabs/explore_screen.dart';
+import '../repositories/destination_repository.dart';
+import 'explore/explore_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({required this.destinations, super.key});

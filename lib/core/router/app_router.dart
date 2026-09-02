@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
 
 import '../../repositories/destination_repository.dart';
-import '../../views/main/main_screen.dart';
+import '../../views/destination/destination_detail_screen.dart';
+import '../../views/main_screen.dart';
 
 /// Named route constants. Add one entry here per screen, then wire it in
 /// [AppRouter.routes].
 abstract final class AppRoutes {
   static const String explore = '/';
+
+  /// Expects the destination id as the route argument.
+  static const String destination = '/destination';
 }
 
 abstract final class AppRouter {
   static Map<String, WidgetBuilder> routes(DestinationRepository destinations) {
     return <String, WidgetBuilder>{
       AppRoutes.explore: (_) => MainScreen(destinations: destinations),
+    };
+  }
+
+  /// Routes that need an argument, which a plain [WidgetBuilder] map cannot
+  /// receive. Returning null lets [onUnknownRoute] handle the rest.
+  static RouteFactory onGenerateRoute(DestinationRepository destinations) {
+    return (RouteSettings settings) {
+      if (settings.name != AppRoutes.destination) return null;
+
+      final id = settings.arguments;
+      if (id is! int) return null;
+
+      return MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => DestinationDetailScreen(
+          destinationId: id,
+          repository: destinations,
+        ),
+      );
     };
   }
 

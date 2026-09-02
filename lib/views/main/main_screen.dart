@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+
+import '../../repositories/destination_repository.dart';
 import 'tabs/explore_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({required this.destinations, super.key});
+
+  final DestinationRepository destinations;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
-
 }
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  static const List<Widget> _tabs = <Widget>[
-    ExploreScreen(),
-    Center(child: Text('Map Screen')),
-    Center(child: Text('Favorite Screen')),
-    Center(child: Text('Setting Screen')),
+  late final List<Widget> _tabs = <Widget>[
+    ExploreScreen(repository: widget.destinations),
+    const Center(child: Text('Map Screen')),
+    const Center(child: Text('Favorite Screen')),
+    const Center(child: Text('Setting Screen')),
   ];
 
   @override
@@ -48,10 +51,8 @@ class _MainScreenState extends State<MainScreen> {
             activeIcon: Icon(Icons.person),
             label: 'Me',
           ),
-        ]
-
-      )
+        ],
+      ),
     );
   }
-
 }

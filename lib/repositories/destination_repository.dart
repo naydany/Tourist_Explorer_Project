@@ -3,28 +3,20 @@ import '../datasources/destination_datasource.dart';
 import '../models/destination.dart';
 import '../models/page.dart';
 
-
 class DestinationRepository {
   DestinationRepository({DestinationDatasource? datasource, ApiClient? client})
     : _datasource = datasource ?? DestinationDatasource(client ?? ApiClient());
 
   final DestinationDatasource _datasource;
 
-  /// Every destination seen so far, by id. Populated by all fetches, so a list
   /// that already showed an entry can hand the detail screen something to
-  /// render immediately.
   final Map<int, Destination> _byId = <int, Destination>{};
 
-  /// The most recent browse result, keyed by the filters that produced it.
-  /// A repeat of the same query is served from here.
   DestinationQuery? _lastQuery;
   Page<Destination>? _lastPage;
 
   List<Destination>? _featured;
 
-  /// First page for [query], from cache when the same filters were just used.
-  ///
-  /// Pass `forceRefresh: true` for pull-to-refresh.
   Future<Page<Destination>> getPage(
     DestinationQuery query, {
     bool forceRefresh = false,
@@ -45,10 +37,6 @@ class DestinationRepository {
     return getPage(const DestinationQuery(), forceRefresh: forceRefresh);
   }
 
-  /// Fetches the page after [current] and returns the two concatenated, so the
-  /// caller can assign the result straight back to its list state.
-  ///
-  /// Returns [current] unchanged when there is nothing left to load.
   Future<Page<Destination>> loadMore(Page<Destination> current) async {
     final offset = current.nextOffset;
     if (offset == null) return current;
@@ -97,10 +85,6 @@ class DestinationRepository {
     return featured;
   }
 
-  /// One destination in full.
-  ///
-  /// The list endpoint already returns every field, so a destination seen in a
-  /// list is served from cache and the detail screen opens without a spinner.
   Future<Destination> getById(int id, {bool forceRefresh = false}) async {
     if (!forceRefresh) {
       final cached = _byId[id];
@@ -127,8 +111,6 @@ class DestinationRepository {
     return nearby;
   }
 
-  /// Reads without touching the network. Returns null when the id has not been
-  /// seen yet - use it to render instantly, then await [getById] for the rest.
   Destination? peek(int id) => _byId[id];
 
   /// Drops every cached result. The next read hits the API.
@@ -139,8 +121,6 @@ class DestinationRepository {
     _lastPage = null;
   }
 
-  /// Single place that turns a [DestinationQuery] into a datasource call, so
-  /// adding a filter means touching one argument list rather than three.
   Future<Page<Destination>> _fetch(
     DestinationQuery query, {
     required int offset,
@@ -167,10 +147,6 @@ class DestinationRepository {
   }
 }
 
-/// The filters behind one browse request.
-///
-/// Value type with `==` so the repository can tell "same query, reuse the
-/// cached page" from "the user changed a filter, refetch".
 class DestinationQuery {
   const DestinationQuery({
     this.text,

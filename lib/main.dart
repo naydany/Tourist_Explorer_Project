@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'core/app.dart';
+import 'repositories/destination_repository.dart';
 
 void main() {
-  runApp(const TouristExplorerApp());
+  runApp(TouristExplorerApp(destinations: DestinationRepository()));
 }

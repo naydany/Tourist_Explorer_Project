@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Single source of truth for colors, typography and component styling.
-/// Widgets should read from `Theme.of(context)` rather than hardcoding values.
 abstract final class AppTheme {
   static const Color seedColor = Color(0xFF00796B);
 

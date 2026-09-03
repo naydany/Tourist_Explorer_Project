@@ -37,6 +37,10 @@ dependencies:
 
   # REST client for the Tourist Explorer API. Used only by lib/core/network/.
   dio: ^5.7.0
+
+  # The Map tab. OpenStreetMap tiles, so no API key and no platform config.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   http: ^1.6.0
 
 dev_dependencies:

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../repositories/destination_repository.dart';
 import '../repositories/favorites_store.dart';
 import 'explore/explore_screen.dart';
+import 'map/map_screen.dart';
 import 'saved/saved_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -22,23 +23,42 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  late final List<Widget> _tabs = <Widget>[
-    ExploreScreen(repository: widget.destinations, favorites: widget.favorites),
-    const Center(child: Text('Map Screen')),
-    SavedScreen(
-      favorites: widget.favorites,
-      onBrowse: () => setState(() => _currentIndex = 0),
-    ),
-    const Center(child: Text('Setting Screen')),
-  ];
+  final Set<int> _visited = <int>{0};
+
+  Widget _tab(int index) {
+    if (!_visited.contains(index)) return const SizedBox.shrink();
+
+    return switch (index) {
+      0 => ExploreScreen(
+        repository: widget.destinations,
+        favorites: widget.favorites,
+      ),
+      1 => MapScreen(
+        repository: widget.destinations,
+        favorites: widget.favorites,
+      ),
+      2 => SavedScreen(favorites: widget.favorites, onBrowse: () => _select(0)),
+      _ => const Center(child: Text('Setting Screen')),
+    };
+  }
+
+  void _select(int index) {
+    setState(() {
+      _currentIndex = index;
+      _visited.add(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _tabs),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: <Widget>[for (var i = 0; i < 4; i++) _tab(i)],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _select,
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

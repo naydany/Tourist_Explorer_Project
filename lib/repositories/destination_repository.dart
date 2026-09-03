@@ -111,6 +111,41 @@ class DestinationRepository {
     return nearby;
   }
 
+  Future<List<Destination>> getInBounds({
+    required double north,
+    required double south,
+    required double east,
+    required double west,
+    String? category,
+  }) async {
+    final inBounds = await _datasource.fetchInBounds(
+      north: north,
+      south: south,
+      east: east,
+      west: west,
+      category: category,
+    );
+    _remember(inBounds);
+    return inBounds;
+  }
+
+  /// Places around a point, nearest first.
+  Future<List<Destination>> getNearby({
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
+    int limit = 10,
+  }) async {
+    final nearby = await _datasource.fetchNearby(
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+      limit: limit,
+    );
+    _remember(nearby);
+    return nearby;
+  }
+
   Destination? peek(int id) => _byId[id];
 
   /// Drops every cached result. The next read hits the API.
@@ -165,10 +200,8 @@ class DestinationQuery {
   static const String mostReviewed = '-reviewCount';
   static const String byName = 'name';
 
-  /// Free-text search term, or null for "everything".
   final String? text;
 
-  /// One of the API's fixed categories, e.g. `Temple`, `Beach`, `Island`.
   final String? category;
 
   final String? province;

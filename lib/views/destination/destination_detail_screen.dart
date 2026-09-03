@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import '../../core/network/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
+import '../../models/opening_hours.dart';
 import '../../repositories/destination_repository.dart';
 import '../../repositories/favorites_store.dart';
 
@@ -329,7 +330,7 @@ class _FactsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final status = _readOpeningStatus(destination.openingHours);
+    final status = readOpeningStatus(destination.openingHours);
     final (price, unit) = _splitFee(destination.entryFee);
 
     return DecoratedBox(
@@ -391,9 +392,9 @@ class _FactsPanel extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (status != _OpeningStatus.unknown) ...<Widget>[
+                if (status != OpeningStatus.unknown) ...<Widget>[
                   const SizedBox(width: 12),
-                  _StatusPill(isOpen: status == _OpeningStatus.open),
+                  _StatusPill(isOpen: status == OpeningStatus.open),
                 ],
               ],
             ),
@@ -817,39 +818,6 @@ class _DetailError extends StatelessWidget {
   }
 }
 
-enum _OpeningStatus { open, closed, unknown }
-
-/// Reads the API's free-text `openingHours` well enough to show a badge.
-///
-/// The field is prose - `"05:00 - 18:00 daily"`, `"Open 24 hours"` - so this
-/// recognises the two common shapes and returns [_OpeningStatus.unknown] for
-/// anything else, in which case the badge is hidden rather than guessed at.
-_OpeningStatus _readOpeningStatus(String openingHours, {DateTime? now}) {
-  final text = openingHours.toLowerCase();
-  if (text.contains('24 hour') || text.contains('24/7')) {
-    return _OpeningStatus.open;
-  }
-
-  final match = RegExp(
-    r'(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})',
-  ).firstMatch(text);
-  if (match == null) return _OpeningStatus.unknown;
-
-  final moment = now ?? DateTime.now();
-  final minutesNow = moment.hour * 60 + moment.minute;
-  final opens = int.parse(match.group(1)!) * 60 + int.parse(match.group(2)!);
-  final closes = int.parse(match.group(3)!) * 60 + int.parse(match.group(4)!);
-
-  // Hours that wrap past midnight, e.g. "18:00 - 02:00".
-  final isOpen = closes >= opens
-      ? minutesNow >= opens && minutesNow < closes
-      : minutesNow >= opens || minutesNow < closes;
-
-  return isOpen ? _OpeningStatus.open : _OpeningStatus.closed;
-}
-
-/// Splits `"$3.00 / person"` into a large price and a small qualifier. Returns
-/// the whole string as the price when there is no amount to pick out.
 (String price, String? unit) _splitFee(String entryFee) {
   final match = RegExp(
     r'^\s*(\$?[\d.,]+|free)\s*(.*)$',
@@ -864,7 +832,6 @@ _OpeningStatus _readOpeningStatus(String openingHours, {DateTime? now}) {
   );
 }
 
-/// `2431` -> `2,431`.
 String _thousands(int value) {
   return value.toString().replaceAllMapped(
     RegExp(r'(\d)(?=(\d{3})+$)'),

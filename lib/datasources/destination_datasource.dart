@@ -3,20 +3,11 @@ import '../core/network/api_exception.dart';
 import '../models/destination.dart';
 import '../models/page.dart';
 
-/// Maps the `/destinations` routes onto typed results.
-///
-/// The only layer that knows endpoint paths and query-parameter names. It adds
-/// no caching or business rules - that is the repository's job.
 class DestinationDatasource {
   const DestinationDatasource(this._client);
 
   final ApiClient _client;
 
-  /// `GET /destinations` - browse, search, filter and sort.
-  ///
-  /// [sort] accepts `id`, `name`, `rating`, `popularity` or `reviewCount`,
-  /// with a `-` prefix for descending. Null arguments are omitted from the
-  /// query string, so the server's own defaults apply.
   Future<Page<Destination>> fetchPage({
     String? query,
     String? category,
@@ -45,7 +36,6 @@ class DestinationDatasource {
     return _page(body);
   }
 
-  /// `GET /destinations/featured` - top entries by popularity, unpaginated.
   Future<List<Destination>> fetchFeatured({int limit = 5}) async {
     final body = await _client.get(
       '/destinations/featured',
@@ -54,13 +44,51 @@ class DestinationDatasource {
     return _list(body);
   }
 
-  /// `GET /destinations/{id}` - full detail for one destination.
   Future<Destination> fetchById(int id) async {
     final body = await _client.get('/destinations/$id');
     return _single(body);
   }
 
-  /// `GET /destinations/{id}/nearby` - other places around a destination.
+  /// `GET /destinations/map` - everything inside a map viewport.
+  Future<List<Destination>> fetchInBounds({
+    required double north,
+    required double south,
+    required double east,
+    required double west,
+    String? category,
+  }) async {
+    final body = await _client.get(
+      '/destinations/map',
+      query: <String, Object?>{
+        'north': north,
+        'south': south,
+        'east': east,
+        'west': west,
+        'category': category,
+      },
+    );
+    return _list(body);
+  }
+
+  /// `GET /destinations/nearby` - places around a point, nearest first.
+  Future<List<Destination>> fetchNearby({
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
+    int limit = 10,
+  }) async {
+    final body = await _client.get(
+      '/destinations/nearby',
+      query: <String, Object?>{
+        'latitude': latitude,
+        'longitude': longitude,
+        'radiusKm': radiusKm,
+        'limit': limit,
+      },
+    );
+    return _list(body);
+  }
+
   Future<List<Destination>> fetchNearbyTo(
     int id, {
     double? radiusKm,
@@ -73,11 +101,6 @@ class DestinationDatasource {
     return _list(body);
   }
 
-  // --- decoding -------------------------------------------------------------
-  //
-  // The three shapes the API returns. Keeping them here means a change to the
-  // envelope touches one file.
-
   Page<Destination> _page(Object? body) {
     if (body is! Map<String, dynamic>) throw const ParseException();
     try {
@@ -88,7 +111,6 @@ class DestinationDatasource {
   }
 
   List<Destination> _list(Object? body) {
-    // `featured` and `nearby` answer with a bare array.
     if (body is! List<dynamic>) throw const ParseException();
     try {
       return body

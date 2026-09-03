@@ -7,7 +7,6 @@ class Page<T> {
     required this.hasMore,
   });
 
-  /// Decodes the envelope, delegating each entry to [itemFromJson].
   factory Page.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic> json) itemFromJson,
@@ -24,7 +23,6 @@ class Page<T> {
       total: total,
       limit: json['limit'] as int,
       offset: offset,
-      // `hasMore` is optional in the schema; derive it when it is absent.
       hasMore: json['hasMore'] as bool? ?? offset + items.length < total,
     );
   }

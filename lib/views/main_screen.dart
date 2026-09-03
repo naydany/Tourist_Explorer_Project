@@ -4,17 +4,20 @@ import '../repositories/destination_repository.dart';
 import '../repositories/favorites_store.dart';
 import 'explore/explore_screen.dart';
 import 'map/map_screen.dart';
+import 'profile/profile_screen.dart';
 import 'saved/saved_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
     required this.destinations,
     required this.favorites,
+    required this.themeMode,
     super.key,
   });
 
   final DestinationRepository destinations;
   final FavoritesStore favorites;
+  final ValueNotifier<ThemeMode> themeMode;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -38,7 +41,11 @@ class _MainScreenState extends State<MainScreen> {
         favorites: widget.favorites,
       ),
       2 => SavedScreen(favorites: widget.favorites, onBrowse: () => _select(0)),
-      _ => const Center(child: Text('Setting Screen')),
+      _ => ProfileScreen(
+        favorites: widget.favorites,
+        repository: widget.destinations,
+        themeMode: widget.themeMode,
+      ),
     };
   }
 

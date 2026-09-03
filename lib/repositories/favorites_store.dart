@@ -39,6 +39,13 @@ class FavoritesStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Unsaves everything.
+  void clear() {
+    if (_entries.isEmpty) return;
+    _entries.clear();
+    notifyListeners();
+  }
+
   void remove(int id) {
     if (_entries.remove(id) != null) notifyListeners();
   }

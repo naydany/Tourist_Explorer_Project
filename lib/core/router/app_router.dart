@@ -18,10 +18,14 @@ abstract final class AppRouter {
   static Map<String, WidgetBuilder> routes(
     DestinationRepository destinations,
     FavoritesStore favorites,
+    ValueNotifier<ThemeMode> themeMode,
   ) {
     return <String, WidgetBuilder>{
-      AppRoutes.explore: (_) =>
-          MainScreen(destinations: destinations, favorites: favorites),
+      AppRoutes.explore: (_) => MainScreen(
+        destinations: destinations,
+        favorites: favorites,
+        themeMode: themeMode,
+      ),
     };
   }
 

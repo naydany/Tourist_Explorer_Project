@@ -1,11 +1,5 @@
 import 'package:flutter/foundation.dart' show listEquals;
 
-/// A single place worth visiting.
-///
-/// Mirrors the `Destination` schema of the Tourist Explorer REST API, whose
-/// JSON is camelCase and maps onto these fields one for one. This type is a
-/// passive value holder: fetching lives in the data source, querying in the
-/// repository.
 class Destination {
   const Destination({
     required this.id,
@@ -29,11 +23,6 @@ class Destination {
     required this.tags,
   });
 
-  /// Builds a [Destination] from one decoded JSON object.
-  ///
-  /// Throws [TypeError] if a field is missing or has an unexpected type, which
-  /// is deliberate: malformed seed data should fail loudly at load time rather
-  /// than surface as a blank card later.
   factory Destination.fromJson(Map<String, dynamic> json) {
     return Destination(
       id: json['id'] as int,
@@ -59,50 +48,35 @@ class Destination {
     );
   }
 
-  /// Stable identifier, unique within the catalogue.
   final int id;
   final String name;
-
-  /// One-line summary, for list cards.
   final String shortDescription;
-
-  /// Full write-up, for the detail screen.
   final String longDescription;
-
-  /// Broad grouping such as `Temple`, `Beach` or `Nature`.
   final String category;
 
-  /// Cambodian province the destination sits in.
   final String province;
   final String address;
 
-  /// Average score out of 5.
   final double rating;
   final int reviewCount;
 
-  /// Editorial ranking out of 100; the default list sort.
   final int popularity;
 
-  /// Primary image, used for list cards and the detail header.
   final String imageUrl;
 
-  /// Additional images for the detail screen carousel.
   final List<String> gallery;
 
   final String openingHours;
   final String entryFee;
   final String bestTimeToVisit;
 
-  /// Rough visit length, e.g. `Half day`.
   final String suggestedDuration;
 
   final double latitude;
   final double longitude;
 
-  /// Free-form labels used for search and filtering.
   final List<String> tags;
 
-  /// Inverse of [Destination.fromJson]; round-trips back to the seed format.
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'id': id,

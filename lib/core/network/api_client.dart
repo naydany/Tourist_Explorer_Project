@@ -5,12 +5,6 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import 'api_exception.dart';
 
-/// The single place that speaks HTTP.
-///
-/// Wraps [Dio] so the rest of the app never imports it: requests go out with
-/// the standard headers and base URL already applied, and every failure comes
-/// back as an [ApiException] rather than a [DioException]. Datasources above
-/// this layer deal in decoded JSON only.
 class ApiClient {
   ApiClient({Dio? dio, String? baseUrl, this.deviceId}) : _dio = dio ?? Dio() {
     _dio.options = _dio.options.copyWith(
@@ -23,19 +17,14 @@ class ApiClient {
         'Accept': 'application/json',
         'X-Device-Id': ?deviceId,
       },
-      // Take every status back as a normal response and decide here, so error
-      // bodies stay readable instead of arriving as a thrown DioException.
       validateStatus: (_) => true,
     );
   }
 
   final Dio _dio;
 
-  /// Identifies the caller to the `/favorites` endpoints, which key their list
-  /// on an `X-Device-Id` header rather than an account.
   final String? deviceId;
 
-  /// Escape hatch for interceptors (logging, auth refresh, ETag caching).
   Dio get dio => _dio;
 
   Future<Object?> get(String path, {Map<String, Object?>? query}) {
@@ -58,7 +47,6 @@ class ApiClient {
     return _send('DELETE', path, query: query);
   }
 
-  /// Closes the underlying connection pool. Call from the owner's `dispose`.
   void close() => _dio.close();
 
   Future<Object?> _send(
@@ -82,8 +70,6 @@ class ApiClient {
     return _decode(response);
   }
 
-  /// Drops nulls so an unset filter is simply absent from the query string.
-  /// Dio stringifies the remaining values itself.
   Map<String, Object>? _query(Map<String, Object?>? query) {
     if (query == null || query.isEmpty) return null;
     final params = <String, Object>{
@@ -93,8 +79,6 @@ class ApiClient {
     return params.isEmpty ? null : params;
   }
 
-  /// `validateStatus` lets everything through, so a [DioException] here is a
-  /// transport problem rather than an HTTP error status.
   ApiException _networkFailure(DioException error) {
     return switch (error.type) {
       DioExceptionType.connectionTimeout ||
@@ -113,7 +97,6 @@ class ApiClient {
   Object? _decode(Response<dynamic> response) {
     final status = response.statusCode ?? 0;
 
-    // 204 (delete) and 304 (unchanged, when ETags are in play) carry no body.
     if (status == 204 || status == 304) return null;
 
     if (status < 200 || status >= 300) {
@@ -123,8 +106,6 @@ class ApiClient {
     final data = response.data;
     if (data == null) return null;
 
-    // Dio decodes JSON itself; a String here means the server sent something
-    // else, or a content type Dio did not recognise.
     if (data is String) {
       if (data.isEmpty) return null;
       try {
@@ -136,8 +117,6 @@ class ApiClient {
     return data;
   }
 
-  /// FastAPI reports failures as `{"detail": ...}`; fall back to the raw body
-  /// when the error came from somewhere else, such as a proxy.
   String _errorMessage(Object? data) {
     if (data is Map) {
       final detail = data['detail'];

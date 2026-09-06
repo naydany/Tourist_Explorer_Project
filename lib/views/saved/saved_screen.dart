@@ -17,7 +17,6 @@ class SavedScreen extends StatefulWidget {
 }
 
 class _SavedScreenState extends State<SavedScreen> {
-  /// Null means "All". Filtering happens in memory; the saved list is small.
   String? _category;
 
   List<Destination> get _visible {
@@ -129,7 +128,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// "just now", "2 hours ago", "2 days ago" - enough for a subtitle.
 String _relative(DateTime moment) {
   final elapsed = DateTime.now().difference(moment);
 
@@ -158,7 +156,6 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // One category means the filter can only ever say "all of them".
     if (categories.length < 2) return const SizedBox.shrink();
 
     return SizedBox(
@@ -272,8 +269,6 @@ class _EmptySaved extends StatelessWidget {
   }
 }
 
-/// Pale disc with an outlined heart and a small amber plus - the "add
-/// something" mark from the design.
 class _EmptyBadge extends StatelessWidget {
   const _EmptyBadge();
 

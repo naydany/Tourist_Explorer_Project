@@ -5,12 +5,10 @@ import '../../repositories/favorites_store.dart';
 import '../../views/destination/destination_detail_screen.dart';
 import '../../views/main_screen.dart';
 
-/// Named route constants. Add one entry here per screen, then wire it in
 /// [AppRouter.routes].
 abstract final class AppRoutes {
   static const String explore = '/';
 
-  /// Expects the destination id as the route argument.
   static const String destination = '/destination';
 }
 
@@ -29,8 +27,6 @@ abstract final class AppRouter {
     };
   }
 
-  /// Routes that need an argument, which a plain [WidgetBuilder] map cannot
-  /// receive. Returning null lets [onUnknownRoute] handle the rest.
   static RouteFactory onGenerateRoute(
     DestinationRepository destinations,
     FavoritesStore favorites,

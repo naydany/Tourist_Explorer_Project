@@ -73,8 +73,6 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // The heart is shared with the list and the Saved tab, so this rebuilds
-    // whenever it changes anywhere.
     return ListenableBuilder(
       listenable: widget.favorites,
       builder: (context, _) {
@@ -104,8 +102,6 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   }
 }
 
-/// Keeps a column of text readable on a desktop window, where a full-width
-/// paragraph would otherwise run to 120+ characters a line. A no-op on phones.
 class _ReadableWidth extends StatelessWidget {
   const _ReadableWidth({required this.child});
 
@@ -115,9 +111,6 @@ class _ReadableWidth extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // heightFactor: 1 makes this size to the child. Without it the Align grows
-    // to fill the sliver's unbounded height and pushes the content out of the
-    // viewport.
     return Center(
       heightFactor: 1,
       child: ConstrainedBox(
@@ -128,7 +121,6 @@ class _ReadableWidth extends StatelessWidget {
   }
 }
 
-/// Hero image with the back and favourite buttons, the name and the address.
 class _Header extends StatelessWidget {
   const _Header({
     required this.destination,
@@ -161,8 +153,6 @@ class _Header extends StatelessWidget {
               return ColoredBox(color: colors.surfaceContainerHighest);
             },
           ),
-          // Darkens both ends so the round buttons at the top and the name at
-          // the foot stay legible over any photo.
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -207,8 +197,6 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
-          // Name and place read as one block at the foot of the photo, clear of
-          // the sheet that overlaps it.
           Positioned(
             left: 20,
             right: 20,
@@ -261,7 +249,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// The cream sheet: facts panel, then the write-up.
 class _Body extends StatelessWidget {
   const _Body({required this.destination});
 
@@ -277,8 +264,6 @@ class _Body extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          // Lifts the sheet off the photo so the seam reads as an edge rather
-          // than the image simply stopping.
           boxShadow: const <BoxShadow>[
             BoxShadow(
               color: Color(0x1F000000),
@@ -287,9 +272,7 @@ class _Body extends StatelessWidget {
             ),
           ],
         ),
-        // The bottom padding replaces the height lost to the translate above
-        // and keeps the last row clear of the action bar.
-        padding: const EdgeInsets.fromLTRB(20, 28, 20, 44),
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 44),
         child: _ReadableWidth(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,8 +303,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Dark green ticket: entry fee and open status above the fold, then hours,
-/// best time and rating below a perforated line.
 class _FactsPanel extends StatelessWidget {
   const _FactsPanel({required this.destination});
 
@@ -365,9 +346,6 @@ class _FactsPanel extends StatelessWidget {
                               price,
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 color: Colors.white,
-                                // An amount gets display size; a sentence such
-                                // as "Included in Angkor Pass" would shout at
-                                // 26, so it steps down instead.
                                 fontSize: price.length > 12 ? 19 : 26,
                               ),
                               maxLines: 2,
@@ -421,7 +399,6 @@ class _FactsPanel extends StatelessWidget {
   }
 }
 
-/// The dashed line and the two notches that make the panel read as a ticket.
 class _Perforation extends StatelessWidget {
   const _Perforation();
 
@@ -576,8 +553,6 @@ class _Fact extends StatelessWidget {
   }
 }
 
-/// Horizontal strip of the extra images from `gallery`, hidden when the
-/// destination only has its cover photo.
 class _Gallery extends StatelessWidget {
   const _Gallery({required this.images});
 
@@ -670,7 +645,6 @@ class _TagWrap extends StatelessWidget {
   }
 }
 
-/// Pinned footer: save toggle plus the primary action.
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.isFavorite,

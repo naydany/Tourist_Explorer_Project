@@ -81,7 +81,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  /// Pulls the next page in once the list is near its end.
   Future<void> _loadMore() async {
     final current = _page;
     if (current == null || !current.hasMore || _isLoadingMore) return;
@@ -124,8 +123,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
   }
 
-  /// True once the user has narrowed the list. The screen then swaps browse
-  /// cards for scannable result rows.
   bool get _isFiltering =>
       _query.text != null ||
       _query.category != null ||
@@ -222,15 +219,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        // Rebuilds when a heart is toggled here or on another screen.
         child: ListenableBuilder(
           listenable: widget.favorites,
           builder: (context, _) => RefreshIndicator(
             onRefresh: () => _load(forceRefresh: true),
             child: CustomScrollView(
               controller: _scrollController,
-              // Always scrollable so pull-to-refresh works on the error and
-              // empty states too.
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: <Widget>[
                 const SliverToBoxAdapter(child: _Greeting()),
@@ -317,7 +311,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
 
     return <Widget>[
-      // Browsing sells one place at a time; results are for scanning many.
       if (_isFiltering)
         SliverList.separated(
           itemCount: page.items.length,
@@ -422,8 +415,6 @@ class _SearchField extends StatelessWidget {
   final VoidCallback onClear;
   final VoidCallback onFilter;
 
-  /// Tints the filter button, so an active filter is visible without opening
-  /// the sheet.
   final bool hasFilters;
 
   @override
@@ -435,8 +426,6 @@ class _SearchField extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            // Rebuilds as the text changes so the clear button can come and go
-            // without the whole screen rebuilding.
             child: ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (context, value, child) {

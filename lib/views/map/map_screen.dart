@@ -116,11 +116,14 @@ class _MapScreenState extends State<MapScreen> {
 
   void _onFilterChanged(MapFilter filter) {
     if (filter == _filter) return;
+    // Captured before setState overwrites it: leaving Nearby needs a refetch
+    // too, since it reads a different endpoint than the viewport search.
+    final previous = _filter;
     setState(() {
       _filter = filter;
       _selected = null;
     });
-    if (filter == MapFilter.nearby || _filter == MapFilter.nearby) _load();
+    if (filter == MapFilter.nearby || previous == MapFilter.nearby) _load();
   }
 
   void _onSelected(Destination destination) {

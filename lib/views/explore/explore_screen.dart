@@ -227,7 +227,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: <Widget>[
-                const SliverToBoxAdapter(child: _Greeting()),
+                SliverToBoxAdapter(
+                  child: _Greeting(total: _isFiltering ? null : _page?.total),
+                ),
                 SliverToBoxAdapter(
                   child: _SearchField(
                     controller: _searchController,
@@ -359,7 +361,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 /// "Where to today?" plus the profile avatar.
 class _Greeting extends StatelessWidget {
-  const _Greeting();
+  const _Greeting({this.total});
+
+  /// Null until the first page lands, and while a filter narrows the results -
+  /// the filtered count belongs in [_ResultSummary], not in the greeting.
+  final int? total;
 
   @override
   Widget build(BuildContext context) {
@@ -376,10 +382,7 @@ class _Greeting extends StatelessWidget {
               children: <Widget>[
                 Text('Where to\ntoday?', style: theme.textTheme.headlineMedium),
                 const SizedBox(height: 8),
-                Text(
-                  'Cambodia · 16 places to explore',
-                  style: theme.textTheme.bodySmall,
-                ),
+                Text(_subtitle, style: theme.textTheme.bodySmall),
               ],
             ),
           ),
@@ -398,6 +401,12 @@ class _Greeting extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String get _subtitle {
+    final count = total;
+    if (count == null) return 'Cambodia · explore the country';
+    return 'Cambodia · $count ${count == 1 ? 'place' : 'places'} to explore';
   }
 }
 

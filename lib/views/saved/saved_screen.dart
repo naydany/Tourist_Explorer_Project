@@ -33,7 +33,9 @@ class _SavedScreenState extends State<SavedScreen> {
 
   void _unsave(Destination destination) {
     widget.favorites.remove(destination.id);
-    if (!widget.favorites.categories.contains(_category)) {
+    // Only clear the chip when the filter in force just lost its last place.
+    final category = _category;
+    if (category != null && !widget.favorites.categories.contains(category)) {
       setState(() => _category = null);
     }
   }

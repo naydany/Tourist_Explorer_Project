@@ -5,7 +5,7 @@ abstract final class ApiConfig {
   static const String _override = String.fromEnvironment('API_BASE_URL');
 
   static const int _localPort = 8000;
-
+  // Base URL configuration - supports Web/Desktop and Android Emulator
   static String get baseUrl {
     if (_override.isNotEmpty) return _override;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {

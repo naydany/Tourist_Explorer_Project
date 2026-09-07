@@ -63,6 +63,22 @@ void main() {
     expect(datasource.nearbyCalls, 1);
   });
 
+  testWidgets('leaving "Nearby" refetches the viewport', (tester) async {
+    final datasource = _FakeDatasource();
+    await tester.pumpWidget(_screen(datasource, FavoritesStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Nearby'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All pins'));
+    await tester.pumpAndSettle();
+
+    // Nearby reads a different endpoint, so returning to the viewport search
+    // has to fetch again rather than leave the radius results on the map.
+    expect(datasource.nearbyCalls, 1);
+    expect(datasource.boundsCalls, 2);
+  });
+
   testWidgets('a failed load shows a retry notice over the map', (
     tester,
   ) async {

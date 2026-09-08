@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/config/map_config.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/router/app_router.dart';
 import '../../models/destination.dart';
@@ -36,8 +37,6 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   /// Cambodia, roughly centred, at a zoom that fits the country.
-  static const LatLng _initialCentre = LatLng(12.5657, 104.9910);
-  static const double _initialZoom = 6.8;
 
   final MapController _mapController = MapController();
 
@@ -183,10 +182,10 @@ class _MapScreenState extends State<MapScreen> {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        initialCenter: _initialCentre,
-        initialZoom: _initialZoom,
-        minZoom: 5,
-        maxZoom: 17,
+        initialCenter: MapConfig.initialCentre,
+        initialZoom: MapConfig.initialZoom,
+        minZoom: MapConfig.minZoom,
+        maxZoom: MapConfig.maxZoom,
         onTap: (tapPosition, point) => setState(() => _selected = null),
         onPositionChanged: (camera, hasGesture) {
           if (hasGesture && !_hasMoved) setState(() => _hasMoved = true);
@@ -194,8 +193,8 @@ class _MapScreenState extends State<MapScreen> {
       ),
       children: <Widget>[
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.tourist_explorer_project',
+          urlTemplate: MapConfig.tileUrlTemplate,
+          userAgentPackageName: MapConfig.userAgentPackageName,
           errorTileCallback: (tile, error, stackTrace) {},
         ),
         MarkerLayer(markers: _markers()),

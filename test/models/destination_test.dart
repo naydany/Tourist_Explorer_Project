@@ -1,67 +1,73 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tourist_explorer_project/models/destination.dart';
 
-/// Reads the seed file straight from disk rather than through `rootBundle`,
-/// so the test exercises the real catalogue without needing asset bundling.
-List<Destination> _loadSeed() {
-  final raw = File('assets/data/db.json').readAsStringSync();
-  final decoded = jsonDecode(raw) as Map<String, dynamic>;
-  return (decoded['destinations'] as List<dynamic>)
-      .map((entry) => Destination.fromJson(entry as Map<String, dynamic>))
-      .toList();
-}
-
-Map<String, dynamic> _rawEntry() {
-  final raw = File('assets/data/db.json').readAsStringSync();
-  final decoded = jsonDecode(raw) as Map<String, dynamic>;
-  return Map<String, dynamic>.from(
-    (decoded['destinations'] as List<dynamic>).first as Map<String, dynamic>,
-  );
-}
+/// A single entry shaped exactly like one the API returns. Kept inline so the
+/// test never depends on a data file or a running backend.
+Map<String, dynamic> _json() => <String, dynamic>{
+  'id': 1,
+  'name': 'Angkor Wat',
+  'shortDescription': "The world's largest religious monument.",
+  'longDescription': 'Long description.',
+  'category': 'Temple',
+  'province': 'Siem Reap',
+  'address': 'Angkor Archaeological Park',
+  'rating': 4.9,
+  'reviewCount': 8900,
+  'popularity': 100,
+  'imageUrl': 'https://example.invalid/angkor.jpg',
+  'gallery': <String>[
+    'https://example.invalid/1.jpg',
+    'https://example.invalid/2.jpg',
+  ],
+  'openingHours': '05:00 - 18:00 daily',
+  'entryFee': r'$37 one-day Angkor Pass',
+  'bestTimeToVisit': 'November - February',
+  'suggestedDuration': 'Half day',
+  'latitude': 13.4125,
+  'longitude': 103.867,
+  'tags': <String>['UNESCO', 'Temple'],
+};
 
 void main() {
   group('Destination.fromJson', () {
-    test('parses every entry in the seed catalogue', () {
-      final destinations = _loadSeed();
+    test('maps fields onto the right properties', () {
+      final destination = Destination.fromJson(_json());
 
-      expect(destinations, hasLength(22));
-      expect(destinations.map((d) => d.id).toSet(), hasLength(22));
-      expect(destinations.every((d) => d.name.isNotEmpty), isTrue);
-      expect(destinations.every((d) => d.gallery.isNotEmpty), isTrue);
-      expect(destinations.every((d) => d.rating > 0 && d.rating <= 5), isTrue);
+      expect(destination.id, 1);
+      expect(destination.name, 'Angkor Wat');
+      expect(destination.category, 'Temple');
+      expect(destination.province, 'Siem Reap');
+      expect(destination.rating, 4.9);
+      expect(destination.reviewCount, 8900);
+      expect(destination.latitude, closeTo(13.4125, 0.0001));
+      expect(destination.longitude, closeTo(103.867, 0.0001));
     });
 
-    test('maps fields onto the right properties', () {
-      final angkorWat = _loadSeed().firstWhere((d) => d.id == 1);
+    test('reads gallery and tags as typed string lists', () {
+      final destination = Destination.fromJson(_json());
 
-      expect(angkorWat.name, 'Angkor Wat');
-      expect(angkorWat.category, 'Temple');
-      expect(angkorWat.province, 'Siem Reap');
-      expect(angkorWat.rating, 4.9);
-      expect(angkorWat.reviewCount, 8900);
-      expect(angkorWat.gallery, hasLength(3));
-      expect(angkorWat.tags, contains('UNESCO'));
-      expect(angkorWat.latitude, closeTo(13.4125, 0.0001));
+      expect(destination.gallery, hasLength(2));
+      expect(destination.tags, contains('UNESCO'));
     });
 
     test('accepts a whole number where a double is expected', () {
-      final json = _rawEntry()..['rating'] = 5;
+      // JSON has no separate int/double, so `5` arrives as an int.
+      final json = _json()..['rating'] = 5;
 
       expect(Destination.fromJson(json).rating, 5.0);
     });
 
     test('throws when a required field is missing', () {
-      final json = _rawEntry()..remove('name');
+      final json = _json()..remove('name');
 
       expect(() => Destination.fromJson(json), throwsA(isA<TypeError>()));
     });
   });
 
   test('toJson round-trips back to an equal object', () {
-    final original = _loadSeed().first;
+    final original = Destination.fromJson(_json());
     final restored = Destination.fromJson(
       jsonDecode(jsonEncode(original.toJson())) as Map<String, dynamic>,
     );
@@ -71,9 +77,14 @@ void main() {
   });
 
   test('value equality distinguishes different destinations', () {
-    final seed = _loadSeed();
+    final angkorWat = Destination.fromJson(_json());
+    final bayon = Destination.fromJson(
+      _json()
+        ..['id'] = 2
+        ..['name'] = 'Bayon Temple',
+    );
 
-    expect(seed[0], isNot(seed[1]));
-    expect(seed.toSet(), hasLength(22));
+    expect(angkorWat, isNot(bayon));
+    expect(<Destination>{angkorWat, bayon}, hasLength(2));
   });
 }

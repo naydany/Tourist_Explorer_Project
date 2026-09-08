@@ -1,4 +1,5 @@
 # Static analysis configuration. Run `flutter analyze` (or `dart fix --apply`).
+# The code quality rules are defined in the `linter` section below. The `analyzer` section
 include: package:flutter_lints/flutter.yaml
 
 analyzer:

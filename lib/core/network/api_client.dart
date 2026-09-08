@@ -9,9 +9,9 @@ class ApiClient {
   ApiClient({Dio? dio, String? baseUrl, this.deviceId}) : _dio = dio ?? Dio() {
     _dio.options = _dio.options.copyWith(
       baseUrl: baseUrl ?? ApiConfig.baseUrl,
-      connectTimeout: ApiConfig.timeout,
-      receiveTimeout: ApiConfig.timeout,
-      sendTimeout: ApiConfig.timeout,
+      connectTimeout: ApiConfig.connectTimeout,
+      receiveTimeout: ApiConfig.receiveTimeout,
+      sendTimeout: ApiConfig.sendTimeout,
       responseType: ResponseType.json,
       headers: <String, String>{
         'Accept': 'application/json',
@@ -19,6 +19,10 @@ class ApiClient {
       },
       validateStatus: (_) => true,
     );
+
+    if (ApiConfig.enableLogging) {
+      _dio.interceptors.add(LogInterceptor(requestBody: true));
+    }
   }
 
   final Dio _dio;

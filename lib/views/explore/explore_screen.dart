@@ -273,7 +273,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   String get _sectionTitle {
     if (_query.category != null) return _query.category!;
-    return 'Popular this week';
+    return 'Popular Places';
   }
 
   List<Widget> _buildBody() {
@@ -443,7 +443,7 @@ class _SearchField extends StatelessWidget {
                   onChanged: onChanged,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
-                    hintText: 'Search places, towns, temples',
+                    hintText: 'Search places, provinces, temples',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: value.text.isEmpty
                         ? null

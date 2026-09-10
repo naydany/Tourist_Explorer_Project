@@ -86,7 +86,7 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Me',
+            label: 'Settings',
           ),
         ],
       ),

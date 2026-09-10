@@ -75,6 +75,15 @@ class _FakeDatasource extends DestinationDatasource {
       hasMore: false,
     );
   }
+
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[];
+  }
 }
 
 class _FailingDatasource extends _FakeDatasource {

@@ -18,7 +18,7 @@ void main() {
     expect(find.byType(DestinationCard), findsAtLeastNWidgets(1));
     expect(find.byType(DestinationRow), findsNothing);
     expect(find.text('Beaches'), findsOneWidget);
-    expect(find.textContaining('POPULAR THIS WEEK'), findsOneWidget);
+    expect(find.textContaining('POPULAR PLACES'), findsOneWidget);
   });
 
   testWidgets('searching switches to result rows', (tester) async {
@@ -143,6 +143,15 @@ class _FakeDatasource extends DestinationDatasource {
       offset: offset,
       hasMore: false,
     );
+  }
+
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[];
   }
 }
 

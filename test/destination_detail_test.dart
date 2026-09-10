@@ -94,6 +94,56 @@ void main() {
     expect(find.text('No connection'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
   });
+
+  testWidgets('the nearby strip lists neighbouring places', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DestinationDetailScreen(
+          destinationId: 12,
+          repository: DestinationRepository(datasource: _NearbyDatasource()),
+          favorites: FavoritesStore(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('NEARBY'), findsOneWidget);
+    expect(find.text('Kampot Riverfront'), findsOneWidget);
+  });
+
+  testWidgets('no neighbours means no nearby section', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DestinationDetailScreen(
+          destinationId: 12,
+          repository: DestinationRepository(datasource: _FakeDatasource()),
+          favorites: FavoritesStore(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('NEARBY'), findsNothing);
+  });
+
+  testWidgets('the destination itself is never listed as its own neighbour', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DestinationDetailScreen(
+          destinationId: 12,
+          repository: DestinationRepository(
+            datasource: _SelfNearbyDatasource(),
+          ),
+          favorites: FavoritesStore(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('NEARBY'), findsNothing);
+  });
 }
 
 class _FakeDatasource extends DestinationDatasource {
@@ -127,12 +177,66 @@ class _FakeDatasource extends DestinationDatasource {
     fetchByIdCalls++;
     return _bokor;
   }
+
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[];
+  }
 }
 
 class _FailingDatasource extends _FakeDatasource {
   @override
   Future<Destination> fetchById(int id) async => throw const NetworkException();
 }
+
+class _NearbyDatasource extends _FakeDatasource {
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[_kampot];
+  }
+}
+
+/// The API can include the destination you asked about; the screen filters it.
+class _SelfNearbyDatasource extends _FakeDatasource {
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[_bokor];
+  }
+}
+
+const Destination _kampot = Destination(
+  id: 13,
+  name: 'Kampot Riverfront',
+  shortDescription: 'Sunset drinks along the Praek Tuek Chhu.',
+  longDescription: 'Long description.',
+  category: 'Town',
+  province: 'Kampot',
+  address: 'Kampot',
+  rating: 4.5,
+  reviewCount: 820,
+  popularity: 70,
+  imageUrl: 'https://example.invalid/kampot.jpg',
+  gallery: <String>[],
+  openingHours: 'Open 24 hours',
+  entryFee: 'Free entry',
+  bestTimeToVisit: 'Late afternoon',
+  suggestedDuration: '2 hours',
+  latitude: 10.6,
+  longitude: 104.18,
+  tags: <String>['Riverside'],
+);
 
 const Destination _bokor = Destination(
   id: 12,

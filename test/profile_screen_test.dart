@@ -115,6 +115,15 @@ class _FakeDatasource extends DestinationDatasource {
       hasMore: false,
     );
   }
+
+  @override
+  Future<List<Destination>> fetchNearbyTo(
+    int id, {
+    double? radiusKm,
+    int limit = 5,
+  }) async {
+    return const <Destination>[];
+  }
 }
 
 const Destination _kohRong = Destination(

@@ -41,7 +41,6 @@ dependencies:
   # The Map tab. OpenStreetMap tiles, so no API key and no platform config.
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  http: ^1.6.0
   shared_preferences: ^2.5.5
 
 dev_dependencies:

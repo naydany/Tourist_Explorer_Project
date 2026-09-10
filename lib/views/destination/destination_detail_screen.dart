@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../../core/network/api_exception.dart';
+import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
 import '../../models/opening_hours.dart';
@@ -29,11 +30,36 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   Destination? _destination;
   ApiException? _error;
 
+  /// Null while in flight; empty once we know there is nothing to show.
+  List<Destination>? _nearby;
+
   @override
   void initState() {
     super.initState();
     _destination = widget.repository.peek(widget.destinationId);
     if (_destination == null) _load();
+    _loadNearby();
+  }
+
+  Future<void> _loadNearby() async {
+    try {
+      final nearby = await widget.repository.getNearbyTo(widget.destinationId);
+      if (!mounted) return;
+      setState(() {
+        _nearby = nearby
+            .where((d) => d.id != widget.destinationId)
+            .toList(growable: false);
+      });
+    } on ApiException {
+      if (!mounted) return;
+      setState(() => _nearby = const <Destination>[]);
+    }
+  }
+
+  void _openNearby(Destination destination) {
+    Navigator.of(
+      context,
+    ).pushReplacementNamed(AppRoutes.destination, arguments: destination.id);
   }
 
   Future<void> _load() async {
@@ -88,7 +114,13 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   onFavoriteToggle: () => widget.favorites.toggle(destination),
                 ),
               ),
-              SliverToBoxAdapter(child: _Body(destination: destination)),
+              SliverToBoxAdapter(
+                child: _Body(
+                  destination: destination,
+                  nearby: _nearby,
+                  onNearbySelected: _openNearby,
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: _ActionBar(
@@ -250,9 +282,15 @@ class _Header extends StatelessWidget {
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.destination});
+  const _Body({
+    required this.destination,
+    required this.nearby,
+    required this.onNearbySelected,
+  });
 
   final Destination destination;
+  final List<Destination>? nearby;
+  final ValueChanged<Destination> onNearbySelected;
 
   @override
   Widget build(BuildContext context) {
@@ -295,8 +333,144 @@ class _Body extends StatelessWidget {
               _Gallery(images: destination.gallery),
               _TagWrap(tags: destination.tags),
               const SizedBox(height: 16),
+              _NearbySection(
+                destinations: nearby,
+                onSelected: onNearbySelected,
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Other places worth visiting around this one. Hidden entirely while loading
+/// or when the API has nothing to suggest, so it never leaves a blank gap.
+class _NearbySection extends StatelessWidget {
+  const _NearbySection({required this.destinations, required this.onSelected});
+
+  static const double _cardWidth = 168;
+  static const double _imageHeight = 96;
+
+  final List<Destination>? destinations;
+  final ValueChanged<Destination> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final nearby = destinations;
+    if (nearby == null || nearby.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SizedBox(height: 10),
+        Row(
+          children: <Widget>[
+            Text('NEARBY', style: theme.textTheme.labelSmall),
+            const SizedBox(width: 12),
+            const Expanded(child: Divider(height: 1)),
+          ],
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 178,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: nearby.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _NearbyCard(
+                destination: nearby[index],
+                width: _cardWidth,
+                imageHeight: _imageHeight,
+                onTap: () => onSelected(nearby[index]),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _NearbyCard extends StatelessWidget {
+  const _NearbyCard({
+    required this.destination,
+    required this.width,
+    required this.imageHeight,
+    required this.onTap,
+  });
+
+  final Destination destination;
+  final double width;
+  final double imageHeight;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final placeholder = ColoredBox(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: SizedBox(width: width, height: imageHeight),
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                destination.imageUrl,
+                width: width,
+                height: imageHeight,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) =>
+                    progress == null ? child : placeholder,
+                errorBuilder: (context, error, stackTrace) => placeholder,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              destination.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.star_rounded,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  destination.rating.toStringAsFixed(1),
+                  style: theme.textTheme.labelSmall,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    destination.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

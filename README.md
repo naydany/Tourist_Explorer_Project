@@ -67,9 +67,9 @@ lib/
     theme/app_theme.dart        light/dark ColorScheme + component themes
   models/                       data classes + JSON parsing
   datasources/                  endpoint paths, JSON -> models
-  repositories/                 caching, paging, queries
-  views/                        screens
-  widgets/                      widgets reused across screens
+  repositories/                 caching, paging, queries over the API
+  stores/                       shared state screens listen to (favorites)
+  views/                        screens, with a widgets/ folder per feature
 test/                           mirrors lib/ structure
 ```
 
@@ -81,6 +81,10 @@ Screen -> Repository -> Datasource -> ApiClient -> API
            caching    paths + JSON   HTTP + errors
 ```
 
+Favorites take the other path: `FavoritesStore` is a `ChangeNotifier` backed by
+`shared_preferences`, so saved places survive a restart and every screen
+listening to it rebuilds when one is added or removed.
+
 Add a screen by creating it under `lib/views/`, then registering a route in
 `AppRoutes` + `AppRouter.routes`.
 
@@ -88,8 +92,8 @@ Add a screen by creating it under `lib/views/`, then registering a route in
 
 ```bash
 dart format --set-exit-if-changed lib test
-flutter test             # all 46 tests; needs the API running on :8000
-flutter test -x live     # 37 tests; widget + unit only, no backend needed
+flutter test             # all 55 tests; needs the API running on :8000
+flutter test -x live     # 46 tests; widget + unit only, no backend needed
 ```
 
 Nine tests in `test/destination_repository_live_test.dart` exercise the real

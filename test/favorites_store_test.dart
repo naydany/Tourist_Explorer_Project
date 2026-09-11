@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tourist_explorer_project/models/destination.dart';
-import 'package:tourist_explorer_project/repositories/favorites_store.dart';
+import 'package:tourist_explorer_project/stores/favorites_store.dart';
 
 /// Writes happen in the background, so let them settle before reading back.
 Future<void> _settle() => Future<void>.delayed(Duration.zero);

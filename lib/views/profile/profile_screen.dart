@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide Page;
 
 import '../../repositories/destination_repository.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 import 'widgets/settings_tile.dart';
 
 class ProfileScreen extends StatefulWidget {

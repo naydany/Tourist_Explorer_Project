@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/app.dart';
 import 'repositories/destination_repository.dart';
-import 'repositories/favorites_store.dart';
+import 'stores/favorites_store.dart';
 
 Future<void> main() async {
   // Required before touching platform channels (shared_preferences) here.

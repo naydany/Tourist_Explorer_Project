@@ -6,7 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../models/destination.dart';
 import '../../models/page.dart';
 import '../../repositories/destination_repository.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 import 'widgets/destination_card.dart';
 import 'widgets/destination_row.dart';
 import 'widgets/filter_sheet.dart';

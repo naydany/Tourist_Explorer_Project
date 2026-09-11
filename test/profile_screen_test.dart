@@ -5,7 +5,7 @@ import 'package:tourist_explorer_project/datasources/destination_datasource.dart
 import 'package:tourist_explorer_project/models/destination.dart';
 import 'package:tourist_explorer_project/models/page.dart';
 import 'package:tourist_explorer_project/repositories/destination_repository.dart';
-import 'package:tourist_explorer_project/repositories/favorites_store.dart';
+import 'package:tourist_explorer_project/stores/favorites_store.dart';
 import 'package:tourist_explorer_project/views/profile/profile_screen.dart';
 
 void main() {

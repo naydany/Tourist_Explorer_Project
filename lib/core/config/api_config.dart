@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
 
 abstract final class ApiConfig {
-
   static const String _baseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
   static const int _localPort = 8000;

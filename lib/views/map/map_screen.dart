@@ -7,7 +7,7 @@ import '../../core/network/api_exception.dart';
 import '../../core/router/app_router.dart';
 import '../../models/destination.dart';
 import '../../repositories/destination_repository.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 import 'widgets/map_peek_card.dart';
 import 'widgets/map_pin.dart';
 

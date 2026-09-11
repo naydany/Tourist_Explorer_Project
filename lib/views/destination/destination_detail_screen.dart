@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
 import '../../models/opening_hours.dart';
 import '../../repositories/destination_repository.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 
 class DestinationDetailScreen extends StatefulWidget {
   const DestinationDetailScreen({

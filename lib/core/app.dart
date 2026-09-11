@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../repositories/destination_repository.dart';
-import '../repositories/favorites_store.dart';
+import '../stores/favorites_store.dart';
 import 'constants/app_constants.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';

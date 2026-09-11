@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 import 'widgets/saved_card.dart';
 
 class SavedScreen extends StatefulWidget {

@@ -5,7 +5,7 @@ import 'package:tourist_explorer_project/core/network/api_exception.dart';
 import 'package:tourist_explorer_project/datasources/destination_datasource.dart';
 import 'package:tourist_explorer_project/models/destination.dart';
 import 'package:tourist_explorer_project/repositories/destination_repository.dart';
-import 'package:tourist_explorer_project/repositories/favorites_store.dart';
+import 'package:tourist_explorer_project/stores/favorites_store.dart';
 import 'package:tourist_explorer_project/views/map/map_screen.dart';
 import 'package:tourist_explorer_project/views/map/widgets/map_peek_card.dart';
 import 'package:tourist_explorer_project/views/map/widgets/map_pin.dart';

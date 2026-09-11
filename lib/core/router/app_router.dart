@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../repositories/destination_repository.dart';
-import '../../repositories/favorites_store.dart';
+import '../../stores/favorites_store.dart';
 import '../../views/destination/destination_detail_screen.dart';
 import '../../views/main_screen.dart';
 

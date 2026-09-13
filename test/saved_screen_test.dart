@@ -118,7 +118,12 @@ void main() {
 }
 
 Widget _screen(FavoritesStore favorites) {
-  return MaterialApp(home: SavedScreen(favorites: favorites));
+  return MaterialApp(
+    home: SavedScreen(
+      favorites: favorites,
+      repository: DestinationRepository(datasource: _FakeDatasource()),
+    ),
+  );
 }
 
 class _FakeDatasource extends DestinationDatasource {

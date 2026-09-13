@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
+import '../../repositories/destination_repository.dart';
 import '../../stores/favorites_store.dart';
+import '../destination/destination_detail_screen.dart';
 import 'widgets/saved_card.dart';
 
 class SavedScreen extends StatefulWidget {
-  const SavedScreen({required this.favorites, this.onBrowse, super.key});
+  const SavedScreen({
+    required this.favorites,
+    required this.repository,
+    this.onBrowse,
+    super.key,
+  });
 
   final FavoritesStore favorites;
+
+  /// Held only to hand to the detail screen this tab opens.
+  final DestinationRepository repository;
+
   final VoidCallback? onBrowse;
 
   @override
@@ -26,9 +36,15 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   void _open(Destination destination) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.destination, arguments: destination.id);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DestinationDetailScreen(
+          destinationId: destination.id,
+          repository: widget.repository,
+          favorites: widget.favorites,
+        ),
+      ),
+    );
   }
 
   void _unsave(Destination destination) {

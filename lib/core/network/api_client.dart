@@ -2,7 +2,7 @@ import 'dart:convert' show jsonDecode;
 
 import 'package:dio/dio.dart';
 
-import '../config/api_config.dart';
+import 'api_config.dart';
 import 'api_exception.dart';
 
 class ApiClient {

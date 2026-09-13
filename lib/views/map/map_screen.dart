@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../core/config/map_config.dart';
 import '../../core/network/api_exception.dart';
-import '../../core/router/app_router.dart';
 import '../../models/destination.dart';
 import '../../repositories/destination_repository.dart';
 import '../../stores/favorites_store.dart';
+import '../destination/destination_detail_screen.dart';
+import 'widgets/map_config.dart';
 import 'widgets/map_peek_card.dart';
 import 'widgets/map_pin.dart';
 
@@ -134,9 +134,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _openDetail(Destination destination) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.destination, arguments: destination.id);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DestinationDetailScreen(
+          destinationId: destination.id,
+          repository: widget.repository,
+          favorites: widget.favorites,
+        ),
+      ),
+    );
   }
 
   @override

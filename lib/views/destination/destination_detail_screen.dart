@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../../core/network/api_exception.dart';
-import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/destination.dart';
 import '../../models/opening_hours.dart';
@@ -57,9 +56,15 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   }
 
   void _openNearby(Destination destination) {
-    Navigator.of(
-      context,
-    ).pushReplacementNamed(AppRoutes.destination, arguments: destination.id);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => DestinationDetailScreen(
+          destinationId: destination.id,
+          repository: widget.repository,
+          favorites: widget.favorites,
+        ),
+      ),
+    );
   }
 
   Future<void> _load() async {

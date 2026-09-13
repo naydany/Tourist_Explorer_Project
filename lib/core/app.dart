@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../repositories/destination_repository.dart';
 import '../stores/favorites_store.dart';
+import '../views/main_screen.dart';
 import 'constants/app_constants.dart';
-import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
 class TouristExplorerApp extends StatelessWidget {
@@ -30,10 +30,11 @@ class TouristExplorerApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: mode,
-        initialRoute: AppRoutes.explore,
-        routes: AppRouter.routes(destinations, favorites, themeMode),
-        onGenerateRoute: AppRouter.onGenerateRoute(destinations, favorites),
-        onUnknownRoute: AppRouter.onUnknownRoute,
+        home: MainScreen(
+          destinations: destinations,
+          favorites: favorites,
+          themeMode: themeMode,
+        ),
       ),
     );
   }

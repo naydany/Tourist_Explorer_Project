@@ -40,7 +40,11 @@ class _MainScreenState extends State<MainScreen> {
         repository: widget.destinations,
         favorites: widget.favorites,
       ),
-      2 => SavedScreen(favorites: widget.favorites, onBrowse: () => _select(0)),
+      2 => SavedScreen(
+        favorites: widget.favorites,
+        repository: widget.destinations,
+        onBrowse: () => _select(0),
+      ),
       _ => ProfileScreen(
         favorites: widget.favorites,
         repository: widget.destinations,
